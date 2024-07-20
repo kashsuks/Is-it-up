@@ -1,4 +1,3 @@
-#Imports
 import tkinter as tk
 from tkinter import ttk
 import requests
@@ -8,6 +7,7 @@ import webbrowser
 
 def check_website(url):
     try:
+        # Ensure the URL starts with http:// or https://
         if not url.startswith(('http://', 'https://')):
             url = 'http://' + url
 
@@ -15,12 +15,15 @@ def check_website(url):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
         }
 
+        # Extract domain and get its IP address
         domain = url.split('//')[-1].split('/')[0]
         ip = socket.gethostbyname(domain)
+        
+        # Fetch location info based on IP address
         location_info = requests.get(f'http://ipinfo.io/{ip}/json').json()
         location = location_info.get('city', 'Unknown') + ', ' + location_info.get('region', 'Unknown') + ', ' + location_info.get('country', 'Unknown')
 
-        #Networking Data
+        # Measure response time and other network metrics
         start_time = datetime.datetime.now()
         response = requests.get(url, headers=headers, timeout=5)
         end_time = datetime.datetime.now()
@@ -28,15 +31,17 @@ def check_website(url):
         first_byte = response.elapsed.total_seconds() * 1000
         last_byte = first_byte
 
-        #Status Code
+        # Check response status code
         if 200 <= response.status_code < 404:
             result_label.config(text="Server is working!", fg=color_success, font=('Helvetica', 36, 'bold'))
             log_website(url, "Successful", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_success)
+            visit_button.pack(pady=10)  # Show visit button if server is working
         else:
             result_label.config(text=f"Server returned status code: {response.status_code}", fg=color_failure, font=('Helvetica', 36, 'bold'))
             log_website(url, "Fail", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_failure)
+            visit_button.pack_forget()  # Hide visit button if server returned error
 
-        #Data in GUI
+        # Update network info labels
         ip_label.config(text=f"IP Address: {ip}", font=('Helvetica', 24))
         location_label.config(text=f"Location: {location}", font=('Helvetica', 24))
         response_time_label.config(text=f"Response Time: {response_time:.2f} ms", font=('Helvetica', 24))
@@ -47,11 +52,21 @@ def check_website(url):
         visit_button.config(command=lambda: webbrowser.open(url))
 
     except requests.exceptions.RequestException as e:
-        result_label.config(text="Server is not working! " + str(e), fg=color_failure, font=('Helvetica', 36, 'bold'))
+        # Handle exceptions and set a simplified error message
+        error_message = "Server not found"
+        result_label.config(text=error_message, fg=color_failure, font=('Helvetica', 36, 'bold'))
         log_website(url, "Fail", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_failure)
+        visit_button.pack_forget()  # Hide visit button if there's an error
+
+        # Clear network info labels
+        ip_label.config(text="IP Address: ", font=('Helvetica', 24))
+        location_label.config(text="Location: ", font=('Helvetica', 24))
+        response_time_label.config(text="Response Time: ", font=('Helvetica', 24))
+        first_byte_label.config(text="First Byte: ", font=('Helvetica', 24))
+        last_byte_label.config(text="Last Byte: ", font=('Helvetica', 24))
 
 def log_website(url, status, time_checked, status_color):
-    #Log website data in new tab
+    # Log website check results in the log tab
     log_text = f"{url:<60} {status:<15} {time_checked}\n"
     website_log.insert(tk.END, log_text)
     website_log.tag_add(status, f"{tk.END}-2l+60c", f"{tk.END}-2l+75c")
@@ -104,7 +119,6 @@ check_button.grid(row=0, column=2, padx=5)
 
 # Visit button
 visit_button = tk.Button(check_frame, text="Visit Website", command=lambda: webbrowser.open(url_entry.get()), bg=color_button, fg=color_bg, font=('Helvetica', 24))
-visit_button.pack(pady=10)
 
 # Result label
 result_label = tk.Label(check_frame, text="", bg=color_bg, fg=color_fg, font=('Helvetica', 36, 'bold'))
