@@ -52,8 +52,8 @@ def check_website(url):
         visit_button.config(command=lambda: webbrowser.open(url))
 
     except requests.exceptions.RequestException as e:
-        # Handle exceptions and format error message
-        error_message = "Server is not working! Error: " + str(e).split("] ")[-1]
+        # Handle exceptions and set a simplified error message
+        error_message = "Server not found"
         result_label.config(text=error_message, fg=color_failure, font=('Helvetica', 36, 'bold'))
         log_website(url, "Fail", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_failure)
         visit_button.pack_forget()  # Hide visit button if there's an error
