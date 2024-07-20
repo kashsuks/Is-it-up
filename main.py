@@ -1,3 +1,4 @@
+#Imports
 import tkinter as tk
 from tkinter import ttk
 import requests
@@ -19,14 +20,15 @@ def check_website(url):
         location_info = requests.get(f'http://ipinfo.io/{ip}/json').json()
         location = location_info.get('city', 'Unknown') + ', ' + location_info.get('region', 'Unknown') + ', ' + location_info.get('country', 'Unknown')
 
+        #Networking Data
         start_time = datetime.datetime.now()
         response = requests.get(url, headers=headers, timeout=5)
         end_time = datetime.datetime.now()
-
         response_time = (end_time - start_time).total_seconds() * 1000
         first_byte = response.elapsed.total_seconds() * 1000
         last_byte = first_byte
 
+        #Status Code
         if 200 <= response.status_code < 404:
             result_label.config(text="Server is working!", fg=color_success, font=('Helvetica', 36, 'bold'))
             log_website(url, "Successful", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_success)
@@ -34,6 +36,7 @@ def check_website(url):
             result_label.config(text=f"Server returned status code: {response.status_code}", fg=color_failure, font=('Helvetica', 36, 'bold'))
             log_website(url, "Fail", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_failure)
 
+        #Data in GUI
         ip_label.config(text=f"IP Address: {ip}", font=('Helvetica', 24))
         location_label.config(text=f"Location: {location}", font=('Helvetica', 24))
         response_time_label.config(text=f"Response Time: {response_time:.2f} ms", font=('Helvetica', 24))
@@ -48,6 +51,7 @@ def check_website(url):
         log_website(url, "Fail", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_failure)
 
 def log_website(url, status, time_checked, status_color):
+    #Log website data in new tab
     log_text = f"{url:<60} {status:<15} {time_checked}\n"
     website_log.insert(tk.END, log_text)
     website_log.tag_add(status, f"{tk.END}-2l+60c", f"{tk.END}-2l+75c")
@@ -56,7 +60,7 @@ def log_website(url, status, time_checked, status_color):
 def rgb_to_hex(r, g, b):
     return f'#{r:02x}{g:02x}{b:02x}'
 
-# Colors
+# Colour Palette
 color_bg = rgb_to_hex(34, 40, 49)
 color_fg = rgb_to_hex(238, 238, 238)
 color_button = rgb_to_hex(255, 211, 105)
