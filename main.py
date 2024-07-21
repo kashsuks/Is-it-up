@@ -1,19 +1,13 @@
 # Imports
 import tkinter as tk
-from tkinter import ttk
-from tkinter import messagebox
+from tkinter import ttk, messagebox
 import requests
 import socket
 import datetime
 import webbrowser
 import threading
 import time
-import platform
-import subprocess
-try:
-    from plyer import notification
-except ImportError:
-    notification = None
+from plyer import notification
 
 def check_website(url):
     try:
@@ -42,7 +36,7 @@ def check_website(url):
         last_byte = first_byte
 
         # Check response status code
-        if 200 <= response.status_code < 404:
+        if 200 <= response.status_code <= 403:
             result_label.config(text="Server is working!", fg=color_success, font=('Helvetica', 36, 'bold'))
             log_website(url, "Successful", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_success)
             visit_button.pack(pady=10)  # Show visit button if server is working
@@ -85,12 +79,24 @@ def log_website(url, status, time_checked, status_color):
 def rgb_to_hex(r, g, b):
     return f'#{r:02x}{g:02x}{b:02x}'
 
-def save_urls():
-    urls = url_entry_automation.get("1.0", tk.END).strip().split("\n")
-    with open("urls.txt", "w") as file:
+def save_urls_to_file(urls):
+    with open('urls.txt', 'w') as file:
         for url in urls:
-            file.write(url + "\n")
-    messagebox.showinfo("Success", "URLs saved successfully")
+            file.write(url + '\n')
+
+def load_urls_from_file():
+    try:
+        with open('urls.txt', 'r') as file:
+            return file.read().strip().split('\n')
+    except FileNotFoundError:
+        return []
+
+def send_notification(title, message):
+    notification.notify(
+        title=title,
+        message=message,
+        timeout=10
+    )
 
 def schedule_check():
     urls = url_entry_automation.get("1.0", tk.END).strip().split("\n")
@@ -120,59 +126,17 @@ def schedule_check():
 
     threading.Thread(target=check_at_scheduled_time, daemon=True).start()
     messagebox.showinfo("Scheduled", f"Website checks scheduled at {schedule_time}")
-
+    save_urls_to_file(urls)  # Save the URLs to file
 
 def check_website_status(url):
     try:
-        # Ensure the URL starts with http:// or https://
-        if not url.startswith(('http://', 'https://')):
-            url = 'http://' + url
-
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
-        }
-
-        # Extract domain and get its IP address
-        domain = url.split('//')[-1].split('/')[0]
-        ip = socket.gethostbyname(domain)
-        
-        # Fetch location info based on IP address
-        location_info = requests.get(f'http://ipinfo.io/{ip}/json').json()
-        location = location_info.get('city', 'Unknown') + ', ' + location_info.get('region', 'Unknown') + ', ' + location_info.get('country', 'Unknown')
-
-        # Measure response time and other network metrics
-        start_time = datetime.datetime.now()
-        response = requests.get(url, headers=headers, timeout=5)
-        end_time = datetime.datetime.now()
-        response_time = (end_time - start_time).total_seconds() * 1000
-        first_byte = response.elapsed.total_seconds() * 1000
-        last_byte = first_byte
-
-        # Check response status code
-        if 200 <= response.status_code < 404:
-            return "Server is working!"
+        response = requests.get(url)
+        if 200 <= response.status_code < 400:
+            return "Server is working"
         else:
-            return f"Server returned status code: {response.status_code}"
-    except requests.exceptions.RequestException as e:
+            return f"Error {response.status_code}"
+    except requests.RequestException:
         return "Server not found"
-
-def send_notification(title, message):
-    if notification:
-        try:
-            notification.notify(
-                title=title,
-                message=message,
-                timeout=10
-            )
-        except NotImplementedError:
-            send_macos_notification(title, message)
-    else:
-        send_macos_notification(title, message)
-
-def send_macos_notification(title, message):
-    if platform.system() == 'Darwin':
-        script = f'display notification "{message}" with title "{title}"'
-        subprocess.run(["osascript", "-e", script])
 
 # Colour Palette
 color_bg = rgb_to_hex(34, 40, 49)
@@ -198,16 +162,18 @@ check_frame = tk.Frame(notebook, bg=color_bg)
 log_frame = tk.Frame(notebook, bg=color_bg)
 automation_frame = tk.Frame(notebook, bg=color_bg)
 
-# Add tabs to the notebook
-notebook.add(check_frame, text="Check Website")
-notebook.add(log_frame, text="Log")
-notebook.add(automation_frame, text="Automation")
+notebook.add(check_frame, text='Check Website')
+notebook.add(log_frame, text='Checked Websites')
+notebook.add(automation_frame, text='Automation')
+
 notebook.pack(expand=1, fill='both')
 
-# Check website tab widgets
+# Input frame in check tab
 input_frame = tk.Frame(check_frame, bg=color_bg)
 input_frame.pack(pady=20)
-url_label = tk.Label(input_frame, text="Enter URL:", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+
+# URL entry
+url_label = tk.Label(input_frame, text="Enter Website URL:", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 url_label.grid(row=0, column=0, padx=5)
 url_entry = tk.Entry(input_frame, width=60, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 24))
 url_entry.grid(row=0, column=1, padx=5)
@@ -238,25 +204,17 @@ first_byte_label.pack(anchor='w')
 last_byte_label = tk.Label(network_info_frame, text="Last Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 last_byte_label.pack(anchor='w')
 
-# Log text widget in log tab
-website_log = tk.Text(log_frame, bg=color_entry_bg, fg=color_fg, font=('Helvetica', 18), wrap='none')
-website_log.pack(expand=1, fill='both', padx=10, pady=10)
+# Text widget in log tab
+website_log = tk.Text(log_frame, wrap=tk.NONE, bg=color_entry_bg, fg=color_fg, font=('Helvetica', 14))
+website_log.pack(expand=True, fill='both', padx=10, pady=10)
+website_log.insert(tk.END, f"{'Website':<60} {'Status':<15} {'Time Checked'}\n")
+website_log.config(state=tk.DISABLED)
 
-# Add a scrollbar to the log text widget
-scrollbar = tk.Scrollbar(log_frame, command=website_log.yview)
-website_log.config(yscrollcommand=scrollbar.set)
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+# Automation tab elements
+url_entry_automation = tk.Text(automation_frame, height=10, width=60, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 14))
+url_entry_automation.pack(pady=20)
 
-# Automation tab widgets
-automation_label = tk.Label(automation_frame, text="Enter URLs (one per line):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-automation_label.pack(pady=10)
-url_entry_automation = tk.Text(automation_frame, height=10, width=60, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 18))
-url_entry_automation.pack(pady=10)
-
-save_button = tk.Button(automation_frame, text="Save URLs", command=save_urls, bg=color_button, fg=color_bg, font=('Helvetica', 24))
-save_button.pack(pady=10)
-
-schedule_label = tk.Label(automation_frame, text="Schedule Check Time (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+schedule_label = tk.Label(automation_frame, text="Schedule Time (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 schedule_label.pack(pady=10)
 schedule_entry = tk.Entry(automation_frame, width=10, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 24))
 schedule_entry.pack(pady=10)
@@ -264,9 +222,9 @@ schedule_entry.pack(pady=10)
 schedule_button = tk.Button(automation_frame, text="Schedule Check", command=schedule_check, bg=color_button, fg=color_bg, font=('Helvetica', 24))
 schedule_button.pack(pady=10)
 
-# Exit button to close fullscreen mode and quit
-exit_button = tk.Button(app, text="Exit Fullscreen", command=lambda: app.attributes('-fullscreen', False), bg=color_button, fg=color_bg, font=('Helvetica', 24))
-exit_button.pack(pady=10)
+# Load URLs from file and populate the URL entry in the automation tab
+urls_from_file = load_urls_from_file()
+url_entry_automation.insert(tk.END, '\n'.join(urls_from_file))
 
 # Run the application
 app.mainloop()
