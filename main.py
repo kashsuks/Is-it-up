@@ -1,10 +1,13 @@
-#Imports
+# Imports
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 import requests
 import socket
 import datetime
 import webbrowser
+import threading
+import time
+from plyer import notification
 
 def check_website(url):
     try:
@@ -33,7 +36,7 @@ def check_website(url):
         last_byte = first_byte
 
         # Check response status code
-        if 200 <= response.status_code < 404:
+        if 200 <= response.status_code <= 403:
             result_label.config(text="Server is working!", fg=color_success, font=('Helvetica', 36, 'bold'))
             log_website(url, "Successful", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'), color_success)
             visit_button.pack(pady=10)  # Show visit button if server is working
@@ -68,13 +71,74 @@ def check_website(url):
 
 def log_website(url, status, time_checked, status_color):
     # Log website check results in the log tab
+    website_log.config(state=tk.NORMAL)  # Allow editing
     log_text = f"{url:<60} {status:<15} {time_checked}\n"
     website_log.insert(tk.END, log_text)
     website_log.tag_add(status, f"{tk.END}-2l+60c", f"{tk.END}-2l+75c")
     website_log.tag_config(status, foreground=status_color)
+    website_log.config(state=tk.DISABLED)  # Disable editing to prevent user modifications
 
 def rgb_to_hex(r, g, b):
     return f'#{r:02x}{g:02x}{b:02x}'
+
+def save_urls_to_file(urls):
+    with open('urls.txt', 'w') as file:
+        for url in urls:
+            file.write(url + '\n')
+
+def load_urls_from_file():
+    try:
+        with open('urls.txt', 'r') as file:
+            return file.read().strip().split('\n')
+    except FileNotFoundError:
+        return []
+
+def send_notification(title, message):
+    notification.notify(
+        title=title,
+        message=message,
+        timeout=10
+    )
+
+def schedule_check():
+    urls = url_entry_automation.get("1.0", tk.END).strip().split("\n")
+    schedule_time = schedule_entry.get()
+
+    def check_at_scheduled_time():
+        while True:
+            now = datetime.datetime.now()
+            scheduled_hour, scheduled_minute = map(int, schedule_time.split(":"))
+            if now.hour == scheduled_hour and now.minute == scheduled_minute:
+                status_summary = ""
+                for url in urls:
+                    status = check_website_status(url)
+                    status_summary += f"{url} - {status}\n"
+                
+                # Send notification
+                send_notification("Website Status Check", status_summary)
+                
+                # Display the status summary in a new window
+                status_window = tk.Toplevel(app)
+                status_window.title("Status Summary")
+                status_window.configure(bg=color_bg)
+                status_label = tk.Label(status_window, text=status_summary, bg=color_bg, fg=color_fg, font=('Helvetica', 18))
+                status_label.pack(pady=20)
+                
+                time.sleep(60)  # Wait for 1 minute to avoid multiple notifications
+
+    threading.Thread(target=check_at_scheduled_time, daemon=True).start()
+    messagebox.showinfo("Scheduled", f"Website checks scheduled at {schedule_time}")
+    save_urls_to_file(urls)  # Save the URLs to file
+
+def check_website_status(url):
+    try:
+        response = requests.get(url)
+        if 200 <= response.status_code < 400:
+            return "Server is working"
+        else:
+            return f"Error {response.status_code}"
+    except requests.RequestException:
+        return "Server not found"
 
 # Colour Palette
 color_bg = rgb_to_hex(34, 40, 49)
@@ -98,9 +162,11 @@ notebook = ttk.Notebook(app)
 # Create frames for each tab
 check_frame = tk.Frame(notebook, bg=color_bg)
 log_frame = tk.Frame(notebook, bg=color_bg)
+automation_frame = tk.Frame(notebook, bg=color_bg)
 
 notebook.add(check_frame, text='Check Website')
 notebook.add(log_frame, text='Checked Websites')
+notebook.add(automation_frame, text='Automation')
 
 notebook.pack(expand=1, fill='both')
 
@@ -121,37 +187,40 @@ check_button.grid(row=0, column=2, padx=5)
 # Visit button
 visit_button = tk.Button(check_frame, text="Visit Website", command=lambda: webbrowser.open(url_entry.get()), bg=color_button, fg=color_bg, font=('Helvetica', 24))
 
-# Result label
-result_label = tk.Label(check_frame, text="", bg=color_bg, fg=color_fg, font=('Helvetica', 36, 'bold'))
+# Result labels
+result_label = tk.Label(check_frame, text="", bg=color_bg, fg=color_fg, font=('Helvetica', 36))
 result_label.pack(pady=20)
-
-# Network Info Labels
-network_info_frame = tk.Frame(check_frame, bg=color_bg)
-network_info_frame.pack(pady=20)
-
-ip_label = tk.Label(network_info_frame, text="IP Address: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-ip_label.pack(anchor='w')
-location_label = tk.Label(network_info_frame, text="Location: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-location_label.pack(anchor='w')
-response_time_label = tk.Label(network_info_frame, text="Response Time: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-response_time_label.pack(anchor='w')
-first_byte_label = tk.Label(network_info_frame, text="First Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-first_byte_label.pack(anchor='w')
-last_byte_label = tk.Label(network_info_frame, text="Last Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-last_byte_label.pack(anchor='w')
+ip_label = tk.Label(check_frame, text="IP Address: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+ip_label.pack(pady=5)
+location_label = tk.Label(check_frame, text="Location: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+location_label.pack(pady=5)
+response_time_label = tk.Label(check_frame, text="Response Time: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+response_time_label.pack(pady=5)
+first_byte_label = tk.Label(check_frame, text="First Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+first_byte_label.pack(pady=5)
+last_byte_label = tk.Label(check_frame, text="Last Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+last_byte_label.pack(pady=5)
 
 # Log text widget in log tab
-website_log = tk.Text(log_frame, bg=color_entry_bg, fg=color_fg, font=('Helvetica', 18), wrap='none')
-website_log.pack(expand=1, fill='both', padx=10, pady=10)
+website_log = tk.Text(log_frame, state=tk.DISABLED, bg=color_entry_bg, fg=color_fg, font=('Helvetica', 18))
+website_log.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
 
-# Add a scrollbar to the log text widget
-scrollbar = tk.Scrollbar(log_frame, command=website_log.yview)
-website_log.config(yscrollcommand=scrollbar.set)
-scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+# Automation tab widgets
+automation_label = tk.Label(automation_frame, text="Enter websites to check (one per line):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+automation_label.pack(pady=10)
+url_entry_automation = tk.Text(automation_frame, height=10, width=50, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 18))
+url_entry_automation.pack(pady=10)
+schedule_label = tk.Label(automation_frame, text="Schedule (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+schedule_label.pack(pady=10)
+schedule_entry = tk.Entry(automation_frame, width=10, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 24))
+schedule_entry.pack(pady=10)
+schedule_button = tk.Button(automation_frame, text="Schedule", command=schedule_check, bg=color_button, fg=color_bg, font=('Helvetica', 24))
+schedule_button.pack(pady=10)
 
-# Exit button to close fullscreen mode and quit
-exit_button = tk.Button(app, text="Exit Fullscreen", command=lambda: app.attributes('-fullscreen', False), bg=color_button, fg=color_bg, font=('Helvetica', 24))
-exit_button.pack(pady=10)
+# Load saved URLs into the automation tab
+saved_urls = load_urls_from_file()
+if saved_urls:
+    url_entry_automation.insert(tk.END, '\n'.join(saved_urls))
 
-# Run the application
+# Start the Tkinter event loop
 app.mainloop()
