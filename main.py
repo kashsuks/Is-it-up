@@ -71,10 +71,12 @@ def check_website(url):
 
 def log_website(url, status, time_checked, status_color):
     # Log website check results in the log tab
+    website_log.config(state=tk.NORMAL)  # Allow editing
     log_text = f"{url:<60} {status:<15} {time_checked}\n"
     website_log.insert(tk.END, log_text)
     website_log.tag_add(status, f"{tk.END}-2l+60c", f"{tk.END}-2l+75c")
     website_log.tag_config(status, foreground=status_color)
+    website_log.config(state=tk.DISABLED)  # Disable editing to prevent user modifications
 
 def rgb_to_hex(r, g, b):
     return f'#{r:02x}{g:02x}{b:02x}'
@@ -185,46 +187,40 @@ check_button.grid(row=0, column=2, padx=5)
 # Visit button
 visit_button = tk.Button(check_frame, text="Visit Website", command=lambda: webbrowser.open(url_entry.get()), bg=color_button, fg=color_bg, font=('Helvetica', 24))
 
-# Result label
-result_label = tk.Label(check_frame, text="", bg=color_bg, fg=color_fg, font=('Helvetica', 36, 'bold'))
+# Result labels
+result_label = tk.Label(check_frame, text="", bg=color_bg, fg=color_fg, font=('Helvetica', 36))
 result_label.pack(pady=20)
+ip_label = tk.Label(check_frame, text="IP Address: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+ip_label.pack(pady=5)
+location_label = tk.Label(check_frame, text="Location: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+location_label.pack(pady=5)
+response_time_label = tk.Label(check_frame, text="Response Time: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+response_time_label.pack(pady=5)
+first_byte_label = tk.Label(check_frame, text="First Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+first_byte_label.pack(pady=5)
+last_byte_label = tk.Label(check_frame, text="Last Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+last_byte_label.pack(pady=5)
 
-# Network Info Labels
-network_info_frame = tk.Frame(check_frame, bg=color_bg)
-network_info_frame.pack(pady=20)
+# Log text widget in log tab
+website_log = tk.Text(log_frame, state=tk.DISABLED, bg=color_entry_bg, fg=color_fg, font=('Helvetica', 18))
+website_log.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
 
-ip_label = tk.Label(network_info_frame, text="IP Address: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-ip_label.pack(anchor='w')
-location_label = tk.Label(network_info_frame, text="Location: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-location_label.pack(anchor='w')
-response_time_label = tk.Label(network_info_frame, text="Response Time: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-response_time_label.pack(anchor='w')
-first_byte_label = tk.Label(network_info_frame, text="First Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-first_byte_label.pack(anchor='w')
-last_byte_label = tk.Label(network_info_frame, text="Last Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-last_byte_label.pack(anchor='w')
-
-# Text widget in log tab
-website_log = tk.Text(log_frame, wrap=tk.NONE, bg=color_entry_bg, fg=color_fg, font=('Helvetica', 14))
-website_log.pack(expand=True, fill='both', padx=10, pady=10)
-website_log.insert(tk.END, f"{'Website':<60} {'Status':<15} {'Time Checked'}\n")
-website_log.config(state=tk.DISABLED)
-
-# Automation tab elements
-url_entry_automation = tk.Text(automation_frame, height=10, width=60, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 14))
-url_entry_automation.pack(pady=20)
-
-schedule_label = tk.Label(automation_frame, text="Schedule Time (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+# Automation tab widgets
+automation_label = tk.Label(automation_frame, text="Enter websites to check (one per line):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+automation_label.pack(pady=10)
+url_entry_automation = tk.Text(automation_frame, height=10, width=50, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 18))
+url_entry_automation.pack(pady=10)
+schedule_label = tk.Label(automation_frame, text="Schedule (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 schedule_label.pack(pady=10)
 schedule_entry = tk.Entry(automation_frame, width=10, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 24))
 schedule_entry.pack(pady=10)
-
-schedule_button = tk.Button(automation_frame, text="Schedule Check", command=schedule_check, bg=color_button, fg=color_bg, font=('Helvetica', 24))
+schedule_button = tk.Button(automation_frame, text="Schedule", command=schedule_check, bg=color_button, fg=color_bg, font=('Helvetica', 24))
 schedule_button.pack(pady=10)
 
-# Load URLs from file and populate the URL entry in the automation tab
-urls_from_file = load_urls_from_file()
-url_entry_automation.insert(tk.END, '\n'.join(urls_from_file))
+# Load saved URLs into the automation tab
+saved_urls = load_urls_from_file()
+if saved_urls:
+    url_entry_automation.insert(tk.END, '\n'.join(saved_urls))
 
-# Run the application
+# Start the Tkinter event loop
 app.mainloop()
