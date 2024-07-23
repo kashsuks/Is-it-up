@@ -93,6 +93,17 @@ def load_urls_from_file():
     except FileNotFoundError:
         return []
 
+def save_schedule_to_file(schedule_time):
+    with open('schedule.txt', 'w') as file:
+        file.write(schedule_time)
+
+def load_schedule_from_file():
+    try:
+        with open('schedule.txt', 'r') as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return ""
+
 def send_notification(title, message):
     notification.notify(
         title=title,
@@ -129,6 +140,7 @@ def schedule_check():
     threading.Thread(target=check_at_scheduled_time, daemon=True).start()
     messagebox.showinfo("Scheduled", f"Website checks scheduled at {schedule_time}")
     save_urls_to_file(urls)  # Save the URLs to file
+    save_schedule_to_file(schedule_time)  # Save the schedule time to file
 
 def check_website_status(url):
     try:
@@ -191,36 +203,45 @@ visit_button = tk.Button(check_frame, text="Visit Website", command=lambda: webb
 result_label = tk.Label(check_frame, text="", bg=color_bg, fg=color_fg, font=('Helvetica', 36))
 result_label.pack(pady=20)
 ip_label = tk.Label(check_frame, text="IP Address: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-ip_label.pack(pady=5)
+ip_label.pack()
 location_label = tk.Label(check_frame, text="Location: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-location_label.pack(pady=5)
+location_label.pack()
 response_time_label = tk.Label(check_frame, text="Response Time: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-response_time_label.pack(pady=5)
+response_time_label.pack()
 first_byte_label = tk.Label(check_frame, text="First Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-first_byte_label.pack(pady=5)
+first_byte_label.pack()
 last_byte_label = tk.Label(check_frame, text="Last Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
-last_byte_label.pack(pady=5)
+last_byte_label.pack()
 
-# Log text widget in log tab
-website_log = tk.Text(log_frame, state=tk.DISABLED, bg=color_entry_bg, fg=color_fg, font=('Helvetica', 18))
-website_log.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
+# Website log
+website_log = tk.Text(log_frame, height=30, state=tk.DISABLED, bg=color_bg, fg=color_fg, font=('Courier', 14))
+website_log.pack(pady=20, padx=20)
 
-# Automation tab widgets
-automation_label = tk.Label(automation_frame, text="Enter websites to check (one per line):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+# Automation tab
+automation_label = tk.Label(automation_frame, text="Enter URLs (one per line):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 automation_label.pack(pady=10)
-url_entry_automation = tk.Text(automation_frame, height=10, width=50, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 18))
+
+url_entry_automation = tk.Text(automation_frame, height=10, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 24))
 url_entry_automation.pack(pady=10)
-schedule_label = tk.Label(automation_frame, text="Schedule (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+
+schedule_label = tk.Label(automation_frame, text="Schedule Time (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 schedule_label.pack(pady=10)
+
 schedule_entry = tk.Entry(automation_frame, width=10, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 24))
 schedule_entry.pack(pady=10)
-schedule_button = tk.Button(automation_frame, text="Schedule", command=schedule_check, bg=color_button, fg=color_bg, font=('Helvetica', 24))
+
+# Display the last scheduled time when opening the automation tab
+last_schedule_time = load_schedule_from_file()
+if last_schedule_time:
+    schedule_entry.insert(0, last_schedule_time)
+
+schedule_button = tk.Button(automation_frame, text="Schedule Check", command=schedule_check, bg=color_button, fg=color_bg, font=('Helvetica', 24))
 schedule_button.pack(pady=10)
 
-# Load saved URLs into the automation tab
-saved_urls = load_urls_from_file()
-if saved_urls:
-    url_entry_automation.insert(tk.END, '\n'.join(saved_urls))
+# Load the URLs from the file when opening the automation tab
+loaded_urls = load_urls_from_file()
+if loaded_urls:
+    url_entry_automation.insert(tk.END, "\n".join(loaded_urls))
 
-# Start the Tkinter event loop
+# Run the application
 app.mainloop()
