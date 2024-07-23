@@ -1,0 +1,7 @@
+tkinter
+requests
+plyer
+webbrowser
+threading
+time
+datetime
