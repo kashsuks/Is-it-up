@@ -1,8 +1,7 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import requests
 import socket
 import datetime
-from plyer import notification
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Necessary for flashing messages

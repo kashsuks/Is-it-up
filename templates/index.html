@@ -8,31 +8,49 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1 class="mt-5">Website Availability Checker</h1>
-        <form method="POST" action="{{ url_for('index') }}">
-            <div class="form-group">
-                <label for="url">Enter Website URL:</label>
-                <input type="text" class="form-control" id="url" name="url" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Check</button>
-        </form>
-        <br>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-info">
-                        <p>{{ message.status }}</p>
-                        <p>IP Address: {{ message.ip }}</p>
-                        <p>Location: {{ message.location }}</p>
-                        <p>Response Time: {{ message.response_time }}</p>
-                        <p>First Byte: {{ message.first_byte }}</p>
-                        <p>Last Byte: {{ message.last_byte }}</p>
-                        <a href="{{ message.url }}" class="btn btn-success">Visit Website</a>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+    <div class="d-flex">
+        <div class="bg-dark p-3" id="sidebar">
+            <h4 class="text-white">Menu</h4>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ url_for('index') }}">Check Website</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ url_for('automation') }}">Automation</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ url_for('log') }}">Log</a>
+                </li>
+            </ul>
+        </div>
+        <div class="container">
+            <h1 class="mt-5">Website Availability Checker</h1>
+            <form method="POST" action="{{ url_for('index') }}">
+                <div class="form-group">
+                    <label for="url">Enter Website URL:</label>
+                    <input type="text" class="form-control" id="url" name="url" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Check</button>
+            </form>
+            <br>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-info">
+                            <p>{{ message.status }}</p>
+                            <p>IP Address: {{ message.ip }}</p>
+                            <p>Location: {{ message.location }}</p>
+                            <p>Response Time: {{ message.response_time }}</p>
+                            <p>First Byte: {{ message.first_byte }}</p>
+                            <p>Last Byte: {{ message.last_byte }}</p>
+                            <a href="{{ message.url }}" class="btn btn-success">Visit Website</a>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
