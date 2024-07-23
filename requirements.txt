@@ -1,7 +1,4 @@
-tkinter
+Flask
+Flask-WTF
 requests
 plyer
-webbrowser
-threading
-time
-datetime

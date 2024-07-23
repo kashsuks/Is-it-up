@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Availability Checker</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Website Availability Checker</h1>
+        <form method="POST" action="{{ url_for('index') }}">
+            <div class="form-group">
+                <label for="url">Enter Website URL:</label>
+                <input type="text" class="form-control" id="url" name="url" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Check</button>
+        </form>
+        <br>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-info">
+                        <p>{{ message.status }}</p>
+                        <p>IP Address: {{ message.ip }}</p>
+                        <p>Location: {{ message.location }}</p>
+                        <p>Response Time: {{ message.response_time }}</p>
+                        <p>First Byte: {{ message.first_byte }}</p>
+                        <p>Last Byte: {{ message.last_byte }}</p>
+                        <a href="{{ message.url }}" class="btn btn-success">Visit Website</a>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</body>
+</html>
