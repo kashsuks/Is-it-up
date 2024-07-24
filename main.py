@@ -1,4 +1,3 @@
-# Imports
 import tkinter as tk
 from tkinter import ttk, messagebox
 import requests
@@ -8,6 +7,7 @@ import webbrowser
 import threading
 import time
 from plyer import notification
+import os
 
 def check_website(url):
     try:
@@ -87,22 +87,20 @@ def save_urls_to_file(urls):
             file.write(url + '\n')
 
 def load_urls_from_file():
-    try:
+    if os.path.exists('urls.txt'):
         with open('urls.txt', 'r') as file:
             return file.read().strip().split('\n')
-    except FileNotFoundError:
-        return []
+    return []
 
 def save_schedule_to_file(schedule_time):
     with open('schedule.txt', 'w') as file:
         file.write(schedule_time)
 
 def load_schedule_from_file():
-    try:
+    if os.path.exists('schedule.txt'):
         with open('schedule.txt', 'r') as file:
             return file.read().strip()
-    except FileNotFoundError:
-        return ""
+    return ""
 
 def send_notification(title, message):
     notification.notify(
@@ -198,10 +196,13 @@ check_button.grid(row=0, column=2, padx=5)
 
 # Visit button
 visit_button = tk.Button(check_frame, text="Visit Website", command=lambda: webbrowser.open(url_entry.get()), bg=color_button, fg=color_bg, font=('Helvetica', 24))
+visit_button.pack(pady=10)
 
-# Result labels
+# Result label
 result_label = tk.Label(check_frame, text="", bg=color_bg, fg=color_fg, font=('Helvetica', 36))
 result_label.pack(pady=20)
+
+# Network info labels
 ip_label = tk.Label(check_frame, text="IP Address: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 ip_label.pack()
 location_label = tk.Label(check_frame, text="Location: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
@@ -213,35 +214,31 @@ first_byte_label.pack()
 last_byte_label = tk.Label(check_frame, text="Last Byte: ", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 last_byte_label.pack()
 
-# Website log
-website_log = tk.Text(log_frame, height=30, state=tk.DISABLED, bg=color_bg, fg=color_fg, font=('Courier', 14))
-website_log.pack(pady=20, padx=20)
+# Log tab
+website_log = tk.Text(log_frame, state=tk.DISABLED, bg=color_entry_bg, fg=color_fg, font=('Courier', 18))
+website_log.pack(padx=20, pady=20, fill='both', expand=True)
 
 # Automation tab
 automation_label = tk.Label(automation_frame, text="Enter URLs (one per line):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 automation_label.pack(pady=10)
 
-url_entry_automation = tk.Text(automation_frame, height=10, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 24))
+url_entry_automation = tk.Text(automation_frame, height=10, width=60, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 18))
 url_entry_automation.pack(pady=10)
 
-schedule_label = tk.Label(automation_frame, text="Schedule Time (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
+schedule_label = tk.Label(automation_frame, text="Schedule (HH:MM):", bg=color_bg, fg=color_fg, font=('Helvetica', 24))
 schedule_label.pack(pady=10)
 
 schedule_entry = tk.Entry(automation_frame, width=10, bg=color_entry_bg, fg=color_fg, insertbackground=color_fg, font=('Helvetica', 24))
 schedule_entry.pack(pady=10)
 
-# Display the last scheduled time when opening the automation tab
-last_schedule_time = load_schedule_from_file()
-if last_schedule_time:
-    schedule_entry.insert(0, last_schedule_time)
+schedule_button = tk.Button(automation_frame, text="Schedule Checks", command=schedule_check, bg=color_button, fg=color_bg, font=('Helvetica', 24))
+schedule_button.pack(pady=20)
 
-schedule_button = tk.Button(automation_frame, text="Schedule Check", command=schedule_check, bg=color_button, fg=color_bg, font=('Helvetica', 24))
-schedule_button.pack(pady=10)
+# Load URLs and schedule time from file (if they exist) and insert them into the appropriate entries
+urls = load_urls_from_file()
+url_entry_automation.insert("1.0", "\n".join(urls))
 
-# Load the URLs from the file when opening the automation tab
-loaded_urls = load_urls_from_file()
-if loaded_urls:
-    url_entry_automation.insert(tk.END, "\n".join(loaded_urls))
+schedule_time = load_schedule_from_file()
+schedule_entry.insert(0, schedule_time)
 
-# Run the application
 app.mainloop()
