@@ -6,7 +6,7 @@ This project aims to check the availability of websites by pinging them and retu
 
 ## How to use
 
-All you need to do is run the `main.py` file after cloning the project in your local drive.
+All you need to do is navigate to the project by going into terminal then typing in `cd <directory name>` and then running `cd websiteAvailability`. Now that you are in the same folder as the project, run `chmod +x run.sh` to make the shell script executable. Finally, you can run `./run.sh` in order to execute the shell script. Doing these steps should make sure that you are in a virtual environment after which you should be able to see the application running.
 
 ## Future of project
 
