@@ -1,3 +1,5 @@
+#Necessary modules for application
+
 requests
 tk
 plyer
