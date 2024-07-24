@@ -6,7 +6,7 @@ This project aims to check the availability of websites by pinging them and retu
 
 ## How to use
 
-All you need to do is then the `main.py` file after cloning the project in your local drive.
+All you need to do is run the `main.py` file after cloning the project in your local drive.
 
 ## Future of project
 
